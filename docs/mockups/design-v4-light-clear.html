@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI News RAG - Design V4 (Light & Clear)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /*
+     * Design V4: Light & Clear
+     *
+     * Inspired by: Feedly, Reeder, NetNewsWire
+     * Philosophy: Readable, breathable, content-first
+     *
+     * Key Principles:
+     * - Light neutral base (#FAFAFA background)
+     * - Clean typography with proper hierarchy
+     * - Subtle shadows, not borders-heavy
+     * - Generous whitespace
+     * - WCAG AA compliant (4.5:1 contrast)
+     */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Light Theme Colors */
+      --bg-page: #F8F9FA;
+      --bg-card: #FFFFFF;
+      --bg-hover: #F3F4F6;
+      --bg-active: #EEF2FF;
+
+      /* Borders */
+      --border-light: #E5E7EB;
+      --border-subtle: #F0F1F3;
+
+      /* Text Hierarchy (WCAG AA compliant) */
+      --text-primary: #111827;      /* 15.3:1 contrast */
+      --text-secondary: #4B5563;    /* 7.5:1 contrast */
+      --text-muted: #6B7280;        /* 5.4:1 contrast */
+      --text-faint: #9CA3AF;        /* 3.0:1 - decorative only */
+
+      /* Accent (Soft Blue) */
+      --accent: #2563EB;
+      --accent-light: #DBEAFE;
+      --accent-hover: #1D4ED8;
+
+      /* Semantic - Tier Colors */
+      --tier-urgent: #DC2626;
+      --tier-urgent-bg: #FEF2F2;
+      --tier-high: #D97706;
+      --tier-high-bg: #FFFBEB;
+      --tier-medium: #2563EB;
+      --tier-medium-bg: #EFF6FF;
+      --tier-low: #6B7280;
+
+      /* Source Colors */
+      --source-hn: #FF6600;
+      --source-hn-bg: #FFF7ED;
+      --source-reddit: #FF4500;
+      --source-reddit-bg: #FFF5F3;
+      --source-rss: #2563EB;
+      --source-rss-bg: #EFF6FF;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
+      --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+      /* Typography */
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'SF Mono', 'Consolas', monospace;
+
+      /* Spacing (16px base) */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-10: 40px;
+      --space-12: 48px;
+
+      /* Border Radius */
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+    }
+
+    body {
+      font-family: var(--font-family);
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      background: var(--bg-page);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .header-inner {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-4) var(--space-6);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .logo-text {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .search-btn {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      color: var(--text-muted);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .search-btn:hover {
+      border-color: var(--accent);
+      color: var(--text-secondary);
+      box-shadow: var(--shadow-md);
+    }
+
+    .search-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .search-btn kbd {
+      padding: 2px 6px;
+      background: var(--bg-page);
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: var(--font-family);
+      color: var(--text-faint);
+    }
+
+    .theme-btn {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .theme-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .theme-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* ===== MAIN ===== */
+    .main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-8) var(--space-6) var(--space-12);
+    }
+
+    /* ===== STATS BAR ===== */
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+      padding: var(--space-4) var(--space-5);
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: var(--space-8);
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .stat-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .stat-dot.urgent { background: var(--tier-urgent); }
+    .stat-dot.high { background: var(--tier-high); }
+    .stat-dot.medium { background: var(--tier-medium); }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ===== SECTION ===== */
+    .section {
+      margin-bottom: var(--space-10);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-5);
+    }
+
+    .section-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-1) var(--space-3);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .section-badge.urgent {
+      background: var(--tier-urgent-bg);
+      color: var(--tier-urgent);
+    }
+
+    .section-badge.high {
+      background: var(--tier-high-bg);
+      color: var(--tier-high);
+    }
+
+    .section-badge.more {
+      background: var(--bg-hover);
+      color: var(--text-muted);
+    }
+
+    .section-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .section-count {
+      font-size: 13px;
+      color: var(--text-faint);
+    }
+
+    /* ===== ARTICLE CARDS ===== */
+    .articles {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    .article-card {
+      display: block;
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      text-decoration: none;
+      color: inherit;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .article-card:hover {
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-light);
+      transform: translateY(-1px);
+    }
+
+    .article-card.unread {
+      border-left: 3px solid var(--accent);
+    }
+
+    .article-card.unread .article-title {
+      font-weight: 600;
+    }
+
+    .article-card.read {
+      opacity: 0.7;
+    }
+
+    .article-card.read:hover {
+      opacity: 0.85;
+    }
+
+    /* Tier-specific left border for unread */
+    .article-card.unread.urgent { border-left-color: var(--tier-urgent); }
+    .article-card.unread.high { border-left-color: var(--tier-high); }
+    .article-card.unread.medium { border-left-color: var(--tier-medium); }
+
+    .article-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-4);
+      margin-bottom: var(--space-2);
+    }
+
+    .article-title {
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 1.45;
+      color: var(--text-primary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .source-badge {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .source-badge.hn {
+      background: var(--source-hn-bg);
+      color: var(--source-hn);
+    }
+
+    .source-badge.reddit {
+      background: var(--source-reddit-bg);
+      color: var(--source-reddit);
+    }
+
+    .source-badge.rss {
+      background: var(--source-rss-bg);
+      color: var(--source-rss);
+    }
+
+    .article-summary {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: var(--space-3);
+    }
+
+    .article-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+
+    .meta-item svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.6;
+    }
+
+    .article-time {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--text-faint);
+    }
+
+    /* ===== GRID LAYOUT (More Articles) ===== */
+    .articles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .article-card.grid {
+      padding: var(--space-4);
+    }
+
+    .article-card.grid .article-title {
+      font-size: 15px;
+      margin-bottom: var(--space-2);
+    }
+
+    .article-card.grid .article-summary {
+      font-size: 13px;
+      -webkit-line-clamp: 3;
+      margin-bottom: var(--space-3);
+    }
+
+    .article-card.grid .article-meta {
+      font-size: 12px;
+      gap: var(--space-3);
+    }
+
+    /* ===== FEATURED CARD (Urgent) ===== */
+    .article-card.featured {
+      background: linear-gradient(135deg, #FEF2F2 0%, #FFFFFF 100%);
+      border: 1px solid rgba(220, 38, 38, 0.15);
+    }
+
+    .article-card.featured:hover {
+      border-color: rgba(220, 38, 38, 0.3);
+    }
+
+    .article-card.featured .article-title {
+      font-size: 19px;
+      font-weight: 600;
+    }
+
+    .article-card.featured .article-summary {
+      font-size: 15px;
+      -webkit-line-clamp: 3;
+    }
+
+    /* ===== UNREAD INDICATOR DOT ===== */
+    .unread-dot {
+      position: absolute;
+      top: var(--space-5);
+      right: var(--space-5);
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    .article-card.urgent .unread-dot { background: var(--tier-urgent); }
+    .article-card.high .unread-dot { background: var(--tier-high); }
+
+    /* ===== LOADING SKELETON ===== */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg,
+        var(--bg-hover) 25%,
+        #E5E7EB 50%,
+        var(--bg-hover) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-sm);
+    }
+
+    .skeleton-title {
+      height: 20px;
+      width: 75%;
+      margin-bottom: var(--space-3);
+    }
+
+    .skeleton-text {
+      height: 14px;
+      width: 100%;
+      margin-bottom: var(--space-2);
+    }
+
+    .skeleton-text:last-child {
+      width: 60%;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: var(--space-12) var(--space-6);
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .empty-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto var(--space-4);
+      background: var(--bg-page);
+      border-radius: var(--radius-xl);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    .empty-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--space-2);
+    }
+
+    .empty-text {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .header-inner {
+        padding: var(--space-3) var(--space-4);
+      }
+
+      .main {
+        padding: var(--space-6) var(--space-4);
+      }
+
+      .search-btn span {
+        display: none;
+      }
+
+      .stats-bar {
+        flex-wrap: wrap;
+        gap: var(--space-4);
+      }
+
+      .articles-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ===== FOCUS STATES (Accessibility) ===== */
+    .article-card:focus-visible,
+    .search-btn:focus-visible,
+    .theme-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">AI</div>
+        <span class="logo-text">News RAG</span>
+      </div>
+      <div class="header-actions">
+        <button class="search-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span>Search</span>
+          <kbd>⌘K</kbd>
+        </button>
+        <button class="theme-btn" aria-label="Toggle theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main">
+
+    <!-- Stats Overview -->
+    <div class="stats-bar">
+      <div class="stat">
+        <span class="stat-value">52</span>
+        <span class="stat-label">articles today</span>
+      </div>
+      <div class="stat">
+        <span class="stat-dot urgent"></span>
+        <span class="stat-value">2</span>
+        <span class="stat-label">urgent</span>
+      </div>
+      <div class="stat">
+        <span class="stat-dot high"></span>
+        <span class="stat-value">5</span>
+        <span class="stat-label">high priority</span>
+      </div>
+      <div class="stat">
+        <span class="stat-dot medium"></span>
+        <span class="stat-value">21</span>
+        <span class="stat-label">medium</span>
+      </div>
+    </div>
+
+    <!-- Urgent Section -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-badge urgent">Urgent</span>
+        <span class="section-count">2 articles</span>
+      </div>
+      <div class="articles">
+        <a href="#" class="article-card featured unread urgent">
+          <span class="unread-dot"></span>
+          <div class="article-top">
+            <h3 class="article-title">Critical Security Vulnerability Found in Popular AI Framework</h3>
+            <span class="source-badge hn">HN</span>
+          </div>
+          <p class="article-summary">A critical remote code execution vulnerability has been discovered in a widely-used machine learning framework. Security researchers recommend immediate patching of all production systems to prevent potential breaches.</p>
+          <div class="article-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              342 points
+            </span>
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              89 comments
+            </span>
+            <span class="article-time">2 hours ago</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card featured unread urgent">
+          <span class="unread-dot"></span>
+          <div class="article-top">
+            <h3 class="article-title">OpenAI Announces GPT-5 Release Date with Major Reasoning Improvements</h3>
+            <span class="source-badge reddit">Reddit</span>
+          </div>
+          <p class="article-summary">OpenAI has officially announced the release timeline for GPT-5, promising significant improvements in reasoning capabilities, mathematical problem-solving, and reduced hallucination rates compared to previous models.</p>
+          <div class="article-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              1.2k points
+            </span>
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              234 comments
+            </span>
+            <span class="article-time">4 hours ago</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- High Priority Section -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-badge high">High Priority</span>
+        <span class="section-count">5 articles</span>
+      </div>
+      <div class="articles">
+        <a href="#" class="article-card unread high">
+          <span class="unread-dot"></span>
+          <div class="article-top">
+            <h3 class="article-title">Claude Code Gets Major Update: New MCP Tools and Background Agents</h3>
+            <span class="source-badge hn">HN</span>
+          </div>
+          <p class="article-summary">Anthropic releases Claude Code 1.2 with support for MCP tools, background agents, and improved context management for long-running coding sessions.</p>
+          <div class="article-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              187 points
+            </span>
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              45 comments
+            </span>
+            <span class="article-time">6 hours ago</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card unread high">
+          <div class="article-top">
+            <h3 class="article-title">New Research: Transformer Architecture Limitations Explained</h3>
+            <span class="source-badge rss">RSS</span>
+          </div>
+          <p class="article-summary">A comprehensive study reveals fundamental limitations in transformer architectures for certain reasoning tasks, proposing hybrid approaches for better performance.</p>
+          <div class="article-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              98 points
+            </span>
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              23 comments
+            </span>
+            <span class="article-time">8 hours ago</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card read high">
+          <div class="article-top">
+            <h3 class="article-title">Show HN: AI Character Generator for Fashion Model Shots and Avatars</h3>
+            <span class="source-badge hn">HN</span>
+          </div>
+          <p class="article-summary">A new tool for generating consistent AI characters for fashion photography and avatar creation with style transfer capabilities.</p>
+          <div class="article-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              1 point
+            </span>
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              0 comments
+            </span>
+            <span class="article-time">Jan 11</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- More Articles Section (Grid) -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-badge more">More Articles</span>
+        <span class="section-count">24 articles</span>
+      </div>
+      <div class="articles-grid">
+        <a href="#" class="article-card grid unread medium">
+          <div class="article-top">
+            <h3 class="article-title">LLM Coding Workflow Going into 2026</h3>
+            <span class="source-badge hn">HN</span>
+          </div>
+          <p class="article-summary">Addy Osmani shares his evolved workflow for using LLMs in daily coding tasks, including prompt engineering tips and tool recommendations.</p>
+          <div class="article-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              45
+            </span>
+            <span class="article-time">Jan 10</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card grid unread medium">
+          <div class="article-top">
+            <h3 class="article-title">Persistent Memory for Claude Code (MCP)</h3>
+            <span class="source-badge hn">HN</span>
+          </div>
+          <p class="article-summary">An MCP-based memory system inspired by Zettelkasten method that allows memories to evolve and persist across sessions.</p>
+          <div class="article-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              32
+            </span>
+            <span class="article-time">Jan 10</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card grid">
+          <div class="article-top">
+            <h3 class="article-title">A Software Library with No Code</h3>
+            <span class="source-badge rss">RSS</span>
+          </div>
+          <p class="article-summary">Drew Breunig's provocative experiment: a library that has no code at all, just a carefully written specification and conformance tests in YAML.</p>
+          <div class="article-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              18
+            </span>
+            <span class="article-time">Jan 11</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card grid">
+          <div class="article-top">
+            <h3 class="article-title">Quoting Linus Torvalds on Vibe Coding</h3>
+            <span class="source-badge rss">RSS</span>
+          </div>
+          <p class="article-summary">Linus admits to using AI for Python visualization tools: "I cut out the middle-man and just used Google Antigravity."</p>
+          <div class="article-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              156
+            </span>
+            <span class="article-time">Jan 11</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card grid unread medium">
+          <div class="article-top">
+            <h3 class="article-title">End-to-End Local LLM Fine-Tuning GUI for M-Series Macs</h3>
+            <span class="source-badge reddit">Reddit</span>
+          </div>
+          <p class="article-summary">A new GUI tool wrapping Apple's MLX framework for local fine-tuning with data prep, PII scrubbing, and model management.</p>
+          <div class="article-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              87
+            </span>
+            <span class="article-time">Jan 11</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card grid">
+          <div class="article-top">
+            <h3 class="article-title">Claude Code in RollerCoaster Tycoon</h3>
+            <span class="source-badge hn">HN</span>
+          </div>
+          <p class="article-summary">A creative demo showing Claude Code being used to build and manage theme parks in the classic simulation game.</p>
+          <div class="article-meta">
+            <span class="meta-item">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+              24
+            </span>
+            <span class="article-time">Jan 10</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Loading State Example -->
+    <section class="section" style="opacity: 0.5;">
+      <div class="section-header">
+        <span class="section-badge more">Loading</span>
+      </div>
+      <div class="articles">
+        <div class="article-card">
+          <div class="skeleton skeleton-title"></div>
+          <div class="skeleton skeleton-text"></div>
+          <div class="skeleton skeleton-text"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>

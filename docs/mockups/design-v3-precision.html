@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI News RAG - Design V3 (Precision & Density)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    /*
+     * Design Direction: Precision & Density (Linear/Raycast aesthetic)
+     * Color Foundation: Cool slate, dark mode
+     * Typography: Inter (geometric sans) + JetBrains Mono for data
+     * Depth Strategy: Borders-only (flat, technical)
+     * Grid: 4px base
+     */
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Cool slate foundation */
+      --bg-base: #0c0c0e;
+      --bg-elevated: #111113;
+      --bg-surface: #18181b;
+      --bg-hover: #1f1f23;
+
+      /* Borders (subtle, borders-only depth) */
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-default: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.12);
+
+      /* Four-level text hierarchy */
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --text-faint: #52525b;
+
+      /* Single accent with tiers */
+      --accent-urgent: #ef4444;
+      --accent-high: #f59e0b;
+      --accent-medium: #3b82f6;
+      --accent-low: #52525b;
+
+      /* Typography scale (4px grid aligned) */
+      --font-xs: 11px;
+      --font-sm: 12px;
+      --font-base: 13px;
+      --font-md: 14px;
+      --font-lg: 16px;
+
+      /* Spacing (4px grid) */
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+
+      /* Border radius (sharp for technical feel) */
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+      font-size: var(--font-base);
+      line-height: 1.5;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+      font-feature-settings: 'tnum' 1;
+    }
+
+    /* ===== HEADER ===== */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(12, 12, 14, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .header-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: var(--space-3) var(--space-4);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--font-md);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .logo-mark {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .search-trigger {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      font-size: var(--font-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .search-trigger:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-hover);
+      color: var(--text-secondary);
+    }
+
+    .search-trigger svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .search-trigger kbd {
+      padding: 2px 5px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 3px;
+      font-family: inherit;
+      font-size: 10px;
+      color: var(--text-faint);
+    }
+
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-subtle);
+      color: var(--text-secondary);
+    }
+
+    .icon-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    .main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: var(--space-6) var(--space-4) var(--space-8);
+    }
+
+    /* ===== SECTION ===== */
+    .section {
+      margin-bottom: var(--space-8);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+      padding-bottom: var(--space-3);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .section-indicator {
+      width: 3px;
+      height: 16px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .section-indicator.urgent { background: var(--accent-urgent); }
+    .section-indicator.high { background: var(--accent-high); }
+    .section-indicator.medium { background: var(--accent-medium); }
+    .section-indicator.more { background: linear-gradient(180deg, var(--accent-medium), var(--accent-low)); }
+
+    .section-label {
+      font-size: var(--font-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .section-count {
+      font-size: var(--font-xs);
+      color: var(--text-faint);
+      font-weight: 400;
+    }
+
+    /* ===== ARTICLE LIST ===== */
+    .article-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      background: var(--border-subtle);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .article {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+      padding: var(--space-4);
+      background: var(--bg-elevated);
+      text-decoration: none;
+      color: inherit;
+      transition: background 0.15s ease;
+      cursor: pointer;
+    }
+
+    .article:hover {
+      background: var(--bg-hover);
+    }
+
+    .article.read {
+      opacity: 0.5;
+    }
+
+    .article.read:hover {
+      opacity: 0.7;
+    }
+
+    /* Tier indicator bar */
+    .article-tier {
+      width: 3px;
+      height: 100%;
+      min-height: 48px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .article-tier.urgent { background: var(--accent-urgent); }
+    .article-tier.high { background: var(--accent-high); }
+    .article-tier.medium { background: var(--accent-medium); }
+    .article-tier.low { background: var(--accent-low); }
+
+    .article-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .article-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin-bottom: var(--space-1);
+    }
+
+    .article-title {
+      font-size: var(--font-md);
+      font-weight: 500;
+      line-height: 1.4;
+      color: var(--text-primary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .article-source {
+      flex-shrink: 0;
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-faint);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .article-source.hn { color: #ff6600; background: rgba(255, 102, 0, 0.1); }
+    .article-source.reddit { color: #ff4500; background: rgba(255, 69, 0, 0.1); }
+    .article-source.rss { color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+
+    .article-summary {
+      font-size: var(--font-base);
+      line-height: 1.5;
+      color: var(--text-secondary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: var(--space-2);
+    }
+
+    .article-meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      font-size: var(--font-sm);
+      color: var(--text-muted);
+    }
+
+    .article-stat {
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+
+    .article-stat svg {
+      width: 12px;
+      height: 12px;
+      opacity: 0.6;
+    }
+
+    .article-time {
+      margin-left: auto;
+      font-size: var(--font-xs);
+      color: var(--text-faint);
+    }
+
+    /* ===== GRID LAYOUT (for more articles) ===== */
+    .article-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .article-card {
+      display: flex;
+      flex-direction: column;
+      padding: var(--space-4);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .article-card:hover {
+      background: var(--bg-hover);
+      border-color: var(--border-hover);
+    }
+
+    .article-card .article-tier {
+      width: 100%;
+      height: 2px;
+      margin-bottom: var(--space-3);
+      border-radius: 1px;
+    }
+
+    .article-card .article-title {
+      font-size: var(--font-base);
+      margin-bottom: var(--space-2);
+    }
+
+    .article-card .article-summary {
+      font-size: var(--font-sm);
+      -webkit-line-clamp: 3;
+      margin-bottom: var(--space-3);
+      flex: 1;
+    }
+
+    .article-card .article-meta {
+      font-size: var(--font-xs);
+      gap: var(--space-3);
+    }
+
+    /* ===== STATS BAR ===== */
+    .stats-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-6);
+      padding: var(--space-3) var(--space-4);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--space-6);
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .stat-value {
+      font-size: var(--font-lg);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .stat-label {
+      font-size: var(--font-xs);
+      color: var(--text-muted);
+    }
+
+    .stat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .stat-dot.urgent { background: var(--accent-urgent); }
+    .stat-dot.high { background: var(--accent-high); }
+    .stat-dot.medium { background: var(--accent-medium); }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center;
+      padding: var(--space-8) var(--space-4);
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto var(--space-4);
+      background: var(--bg-surface);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    /* ===== LOADING SKELETON ===== */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg,
+        var(--bg-surface) 25%,
+        var(--bg-hover) 50%,
+        var(--bg-surface) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-sm);
+    }
+
+    .skeleton-title {
+      height: 16px;
+      width: 70%;
+      margin-bottom: var(--space-2);
+    }
+
+    .skeleton-text {
+      height: 12px;
+      width: 100%;
+      margin-bottom: var(--space-1);
+    }
+
+    .skeleton-text:last-child {
+      width: 50%;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      .header-inner {
+        padding: var(--space-3);
+      }
+
+      .main {
+        padding: var(--space-4) var(--space-3);
+      }
+
+      .search-trigger span {
+        display: none;
+      }
+
+      .article {
+        padding: var(--space-3);
+      }
+
+      .article-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-bar {
+        flex-wrap: wrap;
+        gap: var(--space-4);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-mark">AI</div>
+        <span>News RAG</span>
+      </div>
+      <div class="header-actions">
+        <button class="search-trigger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <span>Search</span>
+          <kbd>⌘K</kbd>
+        </button>
+        <button class="icon-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Stats Overview -->
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-value mono">52</span>
+        <span class="stat-label">articles</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-dot urgent"></span>
+        <span class="stat-value mono">2</span>
+        <span class="stat-label">urgent</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-dot high"></span>
+        <span class="stat-value mono">5</span>
+        <span class="stat-label">high</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-dot medium"></span>
+        <span class="stat-value mono">21</span>
+        <span class="stat-label">medium</span>
+      </div>
+    </div>
+
+    <!-- Urgent Section -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-indicator urgent"></div>
+        <span class="section-label">Urgent</span>
+        <span class="section-count">2</span>
+      </div>
+      <div class="article-list">
+        <a href="#" class="article">
+          <div class="article-tier urgent"></div>
+          <div class="article-content">
+            <div class="article-header">
+              <h3 class="article-title">Critical Security Vulnerability Found in Popular AI Framework</h3>
+              <span class="article-source hn">HN</span>
+            </div>
+            <p class="article-summary">A critical RCE vulnerability has been discovered in a widely-used ML framework. Security researchers recommend immediate patching of all production systems.</p>
+            <div class="article-meta">
+              <span class="article-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+                <span class="mono">342</span>
+              </span>
+              <span class="article-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="mono">89</span>
+              </span>
+              <span class="article-time mono">2h</span>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="article">
+          <div class="article-tier urgent"></div>
+          <div class="article-content">
+            <div class="article-header">
+              <h3 class="article-title">OpenAI Announces GPT-5 Release with Major Reasoning Improvements</h3>
+              <span class="article-source reddit">Reddit</span>
+            </div>
+            <p class="article-summary">OpenAI officially announced the release timeline for GPT-5, promising significant improvements in reasoning and reduced hallucination rates.</p>
+            <div class="article-meta">
+              <span class="article-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+                <span class="mono">1.2k</span>
+              </span>
+              <span class="article-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="mono">234</span>
+              </span>
+              <span class="article-time mono">4h</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- High Priority Section -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-indicator high"></div>
+        <span class="section-label">High Priority</span>
+        <span class="section-count">5</span>
+      </div>
+      <div class="article-list">
+        <a href="#" class="article">
+          <div class="article-tier high"></div>
+          <div class="article-content">
+            <div class="article-header">
+              <h3 class="article-title">Claude Code Gets Major Update: New MCP Tools and Background Agents</h3>
+              <span class="article-source hn">HN</span>
+            </div>
+            <p class="article-summary">Anthropic releases Claude Code 1.2 with support for MCP tools, background agents, and improved context management for long-running sessions.</p>
+            <div class="article-meta">
+              <span class="article-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+                <span class="mono">187</span>
+              </span>
+              <span class="article-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="mono">45</span>
+              </span>
+              <span class="article-time mono">6h</span>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="article">
+          <div class="article-tier high"></div>
+          <div class="article-content">
+            <div class="article-header">
+              <h3 class="article-title">New Research: Transformer Architecture Limitations Explained</h3>
+              <span class="article-source rss">RSS</span>
+            </div>
+            <p class="article-summary">A comprehensive study reveals fundamental limitations in transformer architectures for certain reasoning tasks, proposing hybrid approaches.</p>
+            <div class="article-meta">
+              <span class="article-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+                <span class="mono">98</span>
+              </span>
+              <span class="article-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="mono">23</span>
+              </span>
+              <span class="article-time mono">8h</span>
+            </div>
+          </div>
+        </a>
+        <a href="#" class="article read">
+          <div class="article-tier high"></div>
+          <div class="article-content">
+            <div class="article-header">
+              <h3 class="article-title">Show HN: AI Character Generator for Fashion Model Shots</h3>
+              <span class="article-source hn">HN</span>
+            </div>
+            <p class="article-summary">A new tool for generating consistent AI characters for fashion photography and avatar creation with style transfer.</p>
+            <div class="article-meta">
+              <span class="article-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+                <span class="mono">1</span>
+              </span>
+              <span class="article-stat">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="mono">0</span>
+              </span>
+              <span class="article-time mono">Jan 11</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- More Articles Section (Grid) -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-indicator more"></div>
+        <span class="section-label">More Articles</span>
+        <span class="section-count">24</span>
+      </div>
+      <div class="article-grid">
+        <a href="#" class="article-card">
+          <div class="article-tier medium"></div>
+          <h3 class="article-title">LLM Coding Workflow Going into 2026</h3>
+          <p class="article-summary">Addy Osmani shares his evolved workflow for using LLMs in daily coding tasks, including prompt engineering tips.</p>
+          <div class="article-meta">
+            <span class="article-source hn">HN</span>
+            <span class="article-stat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="m18 15-6-6-6 6"/></svg>
+              <span class="mono">45</span>
+            </span>
+            <span class="article-time mono">Jan 10</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card">
+          <div class="article-tier medium"></div>
+          <h3 class="article-title">Persistent Memory for Claude Code (MCP)</h3>
+          <p class="article-summary">An MCP-based memory system inspired by Zettelkasten that allows memories to evolve and persist across sessions.</p>
+          <div class="article-meta">
+            <span class="article-source hn">HN</span>
+            <span class="article-stat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="m18 15-6-6-6 6"/></svg>
+              <span class="mono">32</span>
+            </span>
+            <span class="article-time mono">Jan 10</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card">
+          <div class="article-tier low"></div>
+          <h3 class="article-title">A Software Library with No Code</h3>
+          <p class="article-summary">Drew Breunig's experiment: a library with no code, just a spec and conformance tests in YAML.</p>
+          <div class="article-meta">
+            <span class="article-source rss">RSS</span>
+            <span class="article-stat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="m18 15-6-6-6 6"/></svg>
+              <span class="mono">18</span>
+            </span>
+            <span class="article-time mono">Jan 11</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card">
+          <div class="article-tier low"></div>
+          <h3 class="article-title">Quoting Linus Torvalds on Vibe Coding</h3>
+          <p class="article-summary">Linus admits to using AI for Python visualization: "I cut out the middle-man and just used Google Antigravity."</p>
+          <div class="article-meta">
+            <span class="article-source rss">RSS</span>
+            <span class="article-stat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="m18 15-6-6-6 6"/></svg>
+              <span class="mono">156</span>
+            </span>
+            <span class="article-time mono">Jan 11</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card">
+          <div class="article-tier medium"></div>
+          <h3 class="article-title">End-to-End Local LLM Fine-Tuning GUI for M-Series</h3>
+          <p class="article-summary">A new GUI wrapping Apple's MLX framework for local fine-tuning with data prep and PII scrubbing.</p>
+          <div class="article-meta">
+            <span class="article-source reddit">Reddit</span>
+            <span class="article-stat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="m18 15-6-6-6 6"/></svg>
+              <span class="mono">87</span>
+            </span>
+            <span class="article-time mono">Jan 11</span>
+          </div>
+        </a>
+
+        <a href="#" class="article-card">
+          <div class="article-tier low"></div>
+          <h3 class="article-title">Claude Code in RollerCoaster Tycoon</h3>
+          <p class="article-summary">A creative demo showing Claude Code being used to build and manage theme parks in the classic sim.</p>
+          <div class="article-meta">
+            <span class="article-source hn">HN</span>
+            <span class="article-stat">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="m18 15-6-6-6 6"/></svg>
+              <span class="mono">24</span>
+            </span>
+            <span class="article-time mono">Jan 10</span>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Loading Example -->
+    <section class="section" style="opacity: 0.5;">
+      <div class="section-header">
+        <div class="section-indicator more"></div>
+        <span class="section-label">Loading State</span>
+      </div>
+      <div class="article-list">
+        <div class="article">
+          <div class="article-tier low"></div>
+          <div class="article-content">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Theme - Clean & Clear */
+    --background: 220 14% 96%;
+    --foreground: 224 71% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 9% 46%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 224 71% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
+    --radius: 0.75rem;
+
+    /* Tier colors - Light mode */
+    --tier-urgent: 0 72% 51%;
+    --tier-urgent-bg: 0 86% 97%;
+    --tier-high: 38 92% 50%;
+    --tier-high-bg: 48 96% 89%;
+    --tier-medium: 217 91% 60%;
+    --tier-medium-bg: 214 95% 93%;
+    --tier-low: 220 9% 46%;
+
+    /* Source colors */
+    --source-hn: 24 100% 50%;
+    --source-hn-bg: 33 100% 96%;
+    --source-reddit: 16 100% 50%;
+    --source-reddit-bg: 16 100% 97%;
+    --source-rss: 217 91% 60%;
+    --source-rss-bg: 214 95% 93%;
+  }
+
+  .dark {
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    --card: 224 71% 6%;
+    --card-foreground: 213 31% 91%;
+    --popover: 224 71% 6%;
+    --popover-foreground: 213 31% 91%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 213 31% 91%;
+    --muted: 215 28% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 215 28% 17%;
+    --accent-foreground: 213 31% 91%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 221 83% 53%;
+
+    /* Tier colors - Dark mode */
+    --tier-urgent: 0 72% 51%;
+    --tier-urgent-bg: 0 50% 10%;
+    --tier-high: 38 92% 50%;
+    --tier-high-bg: 38 50% 10%;
+    --tier-medium: 217 91% 60%;
+    --tier-medium-bg: 217 50% 10%;
+    --tier-low: 215 20% 65%;
+
+    /* Source colors - dark */
+    --source-hn: 24 100% 50%;
+    --source-hn-bg: 24 50% 12%;
+    --source-reddit: 16 100% 50%;
+    --source-reddit-bg: 16 50% 12%;
+    --source-rss: 217 91% 60%;
+    --source-rss-bg: 217 50% 12%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Selection styling */
+::selection {
+  background: hsl(var(--primary) / 0.2);
+  color: hsl(var(--foreground));
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.4);
+}
+
+/* Article card animations */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 25%,
+    hsl(var(--border)) 50%,
+    hsl(var(--muted)) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
