@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Article, fetchLongSummary } from '@/lib/api';
+import { useState, useEffect, useRef } from 'react';
+import { Article, fetchLongSummary, DetailLevel } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { useDetailPreference } from '@/lib/hooks/use-detail-preference';
+import { DetailLevelSelector } from '@/components/detail-level-selector';
 import {
   Sheet,
   SheetContent,
@@ -96,8 +98,12 @@ const categoryLabels: Record<string, string> = {
   research: 'Research',
 };
 
-// Cache for long summaries to avoid re-fetching
+// Cache for long summaries to avoid re-fetching (keyed by articleId_detailLevel)
 const longSummaryCache = new Map<string, string>();
+
+function getCacheKey(articleId: string, detailLevel: DetailLevel): string {
+  return `${articleId}_${detailLevel}`;
+}
 
 export function ArticlePreview({
   article,
@@ -108,24 +114,28 @@ export function ArticlePreview({
   const [longSummary, setLongSummary] = useState<string | null>(null);
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [detailLevel, setDetailLevel] = useDetailPreference();
+  const previousDetailLevelRef = useRef<DetailLevel>(detailLevel);
 
-  // Fetch long summary when sheet opens
+  // Fetch long summary when sheet opens or detail level changes
   useEffect(() => {
     if (!open || !article) {
       return;
     }
 
+    const cacheKey = getCacheKey(article.id, detailLevel);
+
     // Check cache first
-    const cached = longSummaryCache.get(article.id);
+    const cached = longSummaryCache.get(cacheKey);
     if (cached) {
       setLongSummary(cached);
       return;
     }
 
-    // Check if article already has long_summary
-    if (article.long_summary) {
+    // For medium level, check if article already has long_summary (legacy support)
+    if (detailLevel === 'medium' && article.long_summary) {
       setLongSummary(article.long_summary);
-      longSummaryCache.set(article.id, article.long_summary);
+      longSummaryCache.set(cacheKey, article.long_summary);
       return;
     }
 
@@ -135,10 +145,10 @@ export function ArticlePreview({
       setSummaryError(null);
 
       try {
-        const response = await fetchLongSummary(article.id);
+        const response = await fetchLongSummary(article.id, detailLevel);
         if (response.success && response.long_summary) {
           setLongSummary(response.long_summary);
-          longSummaryCache.set(article.id, response.long_summary);
+          longSummaryCache.set(cacheKey, response.long_summary);
         } else {
           setSummaryError('Failed to generate detailed summary');
         }
@@ -150,7 +160,12 @@ export function ArticlePreview({
     };
 
     fetchSummary();
-  }, [open, article]);
+  }, [open, article, detailLevel]);
+
+  // Track detail level changes for re-fetch trigger
+  useEffect(() => {
+    previousDetailLevelRef.current = detailLevel;
+  }, [detailLevel]);
 
   // Reset state when article changes
   useEffect(() => {
@@ -254,16 +269,23 @@ export function ArticlePreview({
 
         {/* Detailed Summary section */}
         <div className="mt-6">
-          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
-            Detailed Analysis
-            {isLoadingSummary && (
-              <span className="ml-2 inline-flex items-center gap-1 text-xs font-normal text-muted-foreground">
-                <Loader2 className="w-3 h-3 animate-spin" />
-                AI is analyzing...
-              </span>
-            )}
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              AI Analysis
+              {isLoadingSummary && (
+                <span className="ml-2 inline-flex items-center gap-1 text-xs font-normal text-muted-foreground">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Generating...
+                </span>
+              )}
+            </h3>
+            <DetailLevelSelector
+              value={detailLevel}
+              onChange={setDetailLevel}
+              disabled={isLoadingSummary}
+            />
+          </div>
 
           {isLoadingSummary && (
             <div className="space-y-3">

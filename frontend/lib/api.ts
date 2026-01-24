@@ -31,20 +31,29 @@ const TIER_PRIORITY: Record<string, number> = {
   low: 3,
 };
 
+export type DetailLevel = 'brief' | 'medium' | 'detailed';
+
 export interface LongSummaryResponse {
   success: boolean;
   article_id: string;
   long_summary: string;
+  detail_level?: string;
   cached: boolean;
 }
 
-export async function fetchLongSummary(articleId: string): Promise<LongSummaryResponse> {
+export async function fetchLongSummary(
+  articleId: string,
+  detailLevel: DetailLevel = 'medium'
+): Promise<LongSummaryResponse> {
   const response = await fetch(LONG_SUMMARY_WEBHOOK_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ article_id: articleId }),
+    body: JSON.stringify({
+      article_id: articleId,
+      detail_level: detailLevel,
+    }),
   });
 
   if (!response.ok) {
