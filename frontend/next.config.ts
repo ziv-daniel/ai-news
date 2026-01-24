@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
   },
   basePath: process.env.NODE_ENV === 'production' ? '/ai-news' : '',
   assetPrefix: process.env.NODE_ENV === 'production' ? '/ai-news/' : '',
+  // Proxy webhook calls in development to avoid CORS issues
+  async rewrites() {
+    return process.env.NODE_ENV === 'development' ? [
+      {
+        source: '/api/webhook/:path*',
+        destination: 'https://n8n.danielshaprvt.work/webhook/:path*',
+      },
+    ] : [];
+  },
 };
 
 export default nextConfig;

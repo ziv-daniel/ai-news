@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import useSWR from 'swr';
 import { getArticles, updateArticle, Article } from '@/lib/api';
 import { ArticleCard } from '@/components/article-card';
+import { ArticlePreview } from '@/components/article-preview';
 import { cn } from '@/lib/utils';
 
 interface SectionBadgeProps {
@@ -129,6 +131,9 @@ function EmptyState() {
 }
 
 export default function Home() {
+  const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   const { data: articles, isLoading, mutate } = useSWR<Article[]>(
     'articles',
     () => getArticles({ archived: false })
@@ -137,6 +142,11 @@ export default function Home() {
   const handleMarkRead = async (id: string) => {
     await updateArticle(id, { read: true });
     mutate();
+  };
+
+  const handlePreview = (article: Article) => {
+    setPreviewArticle(article);
+    setPreviewOpen(true);
   };
 
   // Group articles by tier
@@ -175,6 +185,7 @@ export default function Home() {
                   article={article}
                   variant="list"
                   onMarkRead={handleMarkRead}
+                  onPreview={handlePreview}
                 />
               ))}
             </div>
@@ -192,6 +203,7 @@ export default function Home() {
                   article={article}
                   variant="list"
                   onMarkRead={handleMarkRead}
+                  onPreview={handlePreview}
                 />
               ))}
             </div>
@@ -209,6 +221,7 @@ export default function Home() {
                   article={article}
                   variant="grid"
                   onMarkRead={handleMarkRead}
+                  onPreview={handlePreview}
                 />
               ))}
             </div>
@@ -218,6 +231,14 @@ export default function Home() {
         {/* Empty State */}
         {!isLoading && total === 0 && <EmptyState />}
       </div>
+
+      {/* Article Preview Sheet */}
+      <ArticlePreview
+        article={previewArticle}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        onMarkRead={handleMarkRead}
+      />
     </div>
   );
 }

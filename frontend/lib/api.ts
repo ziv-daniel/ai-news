@@ -1,8 +1,11 @@
+import { supabase, isSupabaseConfigured } from './supabase';
+
 export interface Article {
   id: string;
   title: string;
   link: string;
   summary: string;
+  long_summary?: string;
   source_name: string;
   category: string;
   tier: string;
@@ -12,6 +15,43 @@ export interface Article {
   read: boolean;
   favorited: boolean;
   archived: boolean;
+}
+
+// n8n webhook URL for generating detailed summaries
+// In development, use proxy to avoid CORS issues
+const LONG_SUMMARY_WEBHOOK_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  ? '/api/webhook/article-summary'
+  : 'https://n8n.danielshaprvt.work/webhook/article-summary';
+
+// Tier priority for sorting
+const TIER_PRIORITY: Record<string, number> = {
+  urgent: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
+};
+
+export interface LongSummaryResponse {
+  success: boolean;
+  article_id: string;
+  long_summary: string;
+  cached: boolean;
+}
+
+export async function fetchLongSummary(articleId: string): Promise<LongSummaryResponse> {
+  const response = await fetch(LONG_SUMMARY_WEBHOOK_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ article_id: articleId }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch long summary: ${response.status}`);
+  }
+
+  return response.json();
 }
 
 // Static sample data for when API is unavailable
@@ -177,7 +217,73 @@ export async function getArticles(params?: {
   limit?: number;
   offset?: number;
 }): Promise<Article[]> {
-  // Return sample data (static for GitHub Pages)
+  // Check if Supabase is configured
+  if (!isSupabaseConfigured() || !supabase) {
+    console.log('Supabase not configured, using sample data');
+    return getSampleArticles(params);
+  }
+
+  try {
+    // Build Supabase query
+    let query = supabase
+      .from('articles')
+      .select('id, title, link, summary, long_summary, source_name, category, tier, score, published_at, collected_at, read, favorited, archived');
+
+    // Apply filters
+    if (params?.tier) {
+      query = query.eq('tier', params.tier);
+    }
+    if (params?.category) {
+      query = query.eq('category', params.category);
+    }
+    if (params?.archived !== undefined) {
+      query = query.eq('archived', params.archived);
+    }
+    if (params?.read !== undefined) {
+      query = query.eq('read', params.read);
+    }
+    if (params?.favorited !== undefined) {
+      query = query.eq('favorited', params.favorited);
+    }
+
+    // Order by collected_at descending (newest first), then by tier priority
+    query = query.order('collected_at', { ascending: false });
+
+    // Apply pagination
+    if (params?.limit) {
+      query = query.limit(params.limit);
+    }
+    if (params?.offset) {
+      query = query.range(params.offset, params.offset + (params?.limit || 50) - 1);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Supabase error:', error);
+      throw error;
+    }
+
+    // Sort by tier priority (urgent first), then by score
+    const articles = (data || []).sort((a, b) => {
+      const tierDiff = (TIER_PRIORITY[a.tier] ?? 4) - (TIER_PRIORITY[b.tier] ?? 4);
+      if (tierDiff !== 0) return tierDiff;
+      return (b.score || 0) - (a.score || 0);
+    });
+
+    return articles as Article[];
+  } catch (error) {
+    console.error('Failed to fetch articles from Supabase, using sample data:', error);
+    return getSampleArticles(params);
+  }
+}
+
+// Helper function for sample data fallback
+function getSampleArticles(params?: {
+  tier?: string;
+  archived?: boolean;
+  limit?: number;
+}): Article[] {
   let articles = [...SAMPLE_ARTICLES];
 
   if (params?.tier) {
@@ -197,9 +303,34 @@ export async function updateArticle(
   id: string,
   updates: { read?: boolean; favorited?: boolean; archived?: boolean }
 ): Promise<Article> {
-  const article = SAMPLE_ARTICLES.find(a => a.id === id);
-  if (!article) throw new Error('Article not found');
-  return { ...article, ...updates };
+  // Check if Supabase is configured
+  if (!isSupabaseConfigured() || !supabase) {
+    const article = SAMPLE_ARTICLES.find(a => a.id === id);
+    if (!article) throw new Error('Article not found');
+    return { ...article, ...updates };
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('articles')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase update error:', error);
+      throw error;
+    }
+
+    return data as Article;
+  } catch (error) {
+    console.error('Failed to update article in Supabase:', error);
+    // Fallback for sample data (in-memory update simulation)
+    const article = SAMPLE_ARTICLES.find(a => a.id === id);
+    if (!article) throw new Error('Article not found');
+    return { ...article, ...updates };
+  }
 }
 
 export async function searchArticles(
@@ -207,11 +338,42 @@ export async function searchArticles(
   useVector: boolean = false,
   limit: number = 20
 ): Promise<Article[]> {
-  const lowerQuery = query.toLowerCase();
-  return SAMPLE_ARTICLES
-    .filter(a =>
-      a.title.toLowerCase().includes(lowerQuery) ||
-      a.summary.toLowerCase().includes(lowerQuery)
-    )
-    .slice(0, limit);
+  // Check if Supabase is configured
+  if (!isSupabaseConfigured() || !supabase) {
+    const lowerQuery = query.toLowerCase();
+    return SAMPLE_ARTICLES
+      .filter(a =>
+        a.title.toLowerCase().includes(lowerQuery) ||
+        a.summary.toLowerCase().includes(lowerQuery)
+      )
+      .slice(0, limit);
+  }
+
+  try {
+    // Use full-text search with the search_vector column
+    const { data, error } = await supabase
+      .from('articles')
+      .select('id, title, link, summary, long_summary, source_name, category, tier, score, published_at, collected_at, read, favorited, archived')
+      .textSearch('search_vector', query, { type: 'websearch' })
+      .eq('archived', false)
+      .order('score', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Supabase search error:', error);
+      throw error;
+    }
+
+    return (data || []) as Article[];
+  } catch (error) {
+    console.error('Failed to search articles in Supabase, using sample data:', error);
+    // Fallback to sample data search
+    const lowerQuery = query.toLowerCase();
+    return SAMPLE_ARTICLES
+      .filter(a =>
+        a.title.toLowerCase().includes(lowerQuery) ||
+        a.summary.toLowerCase().includes(lowerQuery)
+      )
+      .slice(0, limit);
+  }
 }

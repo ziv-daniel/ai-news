@@ -7,6 +7,7 @@ interface ArticleCardProps {
   article: Article;
   variant?: 'list' | 'grid';
   onMarkRead?: (id: string) => void;
+  onPreview?: (article: Article) => void;
 }
 
 function timeAgo(dateString: string): string {
@@ -60,6 +61,7 @@ export function ArticleCard({
   article,
   variant = 'list',
   onMarkRead,
+  onPreview,
 }: ArticleCardProps) {
   const cleanSummary = stripHtml(article.summary || '');
   const source = getSourceFromLink(article.link);
@@ -68,17 +70,26 @@ export function ArticleCard({
   const isHigh = article.tier === 'high';
   const isFeatured = isUrgent;
 
+  const handleClick = () => {
+    if (onPreview) {
+      onPreview(article);
+    } else {
+      // Fallback to direct link if no preview handler
+      onMarkRead?.(article.id);
+      window.open(article.link, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
-    <a
-      href={article.link}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={() => onMarkRead?.(article.id)}
+    <button
+      type="button"
+      onClick={handleClick}
       className={cn(
         // Base styles
-        'block bg-card rounded-xl text-card-foreground no-underline',
+        'block w-full text-left bg-card rounded-xl text-card-foreground',
         'shadow-sm border border-transparent',
         'transition-all duration-200 ease-out',
+        'cursor-pointer',
         // Hover effects
         'hover:shadow-md hover:border-border hover:-translate-y-0.5',
         // Focus state for accessibility
@@ -166,6 +177,6 @@ export function ArticleCard({
           {timeAgo(article.collected_at)}
         </span>
       </div>
-    </a>
+    </button>
   );
 }
