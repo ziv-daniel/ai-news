@@ -32,18 +32,22 @@ const TIER_PRIORITY: Record<string, number> = {
 };
 
 export type DetailLevel = 'brief' | 'medium' | 'detailed';
+export type Language = 'en' | 'he' | 'de' | 'fr';
 
 export interface LongSummaryResponse {
   success: boolean;
   article_id: string;
   long_summary: string;
   detail_level?: string;
+  language?: string;
+  translated?: boolean;
   cached: boolean;
 }
 
 export async function fetchLongSummary(
   articleId: string,
-  detailLevel: DetailLevel = 'medium'
+  detailLevel: DetailLevel = 'medium',
+  language: Language = 'en'
 ): Promise<LongSummaryResponse> {
   const response = await fetch(LONG_SUMMARY_WEBHOOK_URL, {
     method: 'POST',
@@ -53,6 +57,7 @@ export async function fetchLongSummary(
     body: JSON.stringify({
       article_id: articleId,
       detail_level: detailLevel,
+      language: language,
     }),
   });
 

@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Article, fetchLongSummary, DetailLevel } from '@/lib/api';
+import { Article, fetchLongSummary, DetailLevel, Language } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useDetailPreference } from '@/lib/hooks/use-detail-preference';
+import { useLanguagePreference } from '@/lib/hooks/use-language-preference';
 import { DetailLevelSelector } from '@/components/detail-level-selector';
+import { LanguageSelector } from '@/components/language-selector';
 import {
   Sheet,
   SheetContent,
@@ -98,11 +100,11 @@ const categoryLabels: Record<string, string> = {
   research: 'Research',
 };
 
-// Cache for long summaries to avoid re-fetching (keyed by articleId_detailLevel)
+// Cache for long summaries to avoid re-fetching (keyed by articleId_detailLevel_language)
 const longSummaryCache = new Map<string, string>();
 
-function getCacheKey(articleId: string, detailLevel: DetailLevel): string {
-  return `${articleId}_${detailLevel}`;
+function getCacheKey(articleId: string, detailLevel: DetailLevel, language: Language): string {
+  return `${articleId}_${detailLevel}_${language}`;
 }
 
 export function ArticlePreview({
@@ -115,15 +117,16 @@ export function ArticlePreview({
   const [isLoadingSummary, setIsLoadingSummary] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const [detailLevel, setDetailLevel] = useDetailPreference();
+  const [language, setLanguage] = useLanguagePreference();
   const previousDetailLevelRef = useRef<DetailLevel>(detailLevel);
 
-  // Fetch long summary when sheet opens or detail level changes
+  // Fetch long summary when sheet opens, detail level changes, or language changes
   useEffect(() => {
     if (!open || !article) {
       return;
     }
 
-    const cacheKey = getCacheKey(article.id, detailLevel);
+    const cacheKey = getCacheKey(article.id, detailLevel, language);
 
     // Check cache first
     const cached = longSummaryCache.get(cacheKey);
@@ -132,8 +135,8 @@ export function ArticlePreview({
       return;
     }
 
-    // For medium level, check if article already has long_summary (legacy support)
-    if (detailLevel === 'medium' && article.long_summary) {
+    // For medium level in English, check if article already has long_summary (legacy support)
+    if (detailLevel === 'medium' && language === 'en' && article.long_summary) {
       setLongSummary(article.long_summary);
       longSummaryCache.set(cacheKey, article.long_summary);
       return;
@@ -145,7 +148,7 @@ export function ArticlePreview({
       setSummaryError(null);
 
       try {
-        const response = await fetchLongSummary(article.id, detailLevel);
+        const response = await fetchLongSummary(article.id, detailLevel, language);
         if (response.success && response.long_summary) {
           setLongSummary(response.long_summary);
           longSummaryCache.set(cacheKey, response.long_summary);
@@ -160,7 +163,7 @@ export function ArticlePreview({
     };
 
     fetchSummary();
-  }, [open, article, detailLevel]);
+  }, [open, article, detailLevel, language]);
 
   // Track detail level changes for re-fetch trigger
   useEffect(() => {
@@ -280,11 +283,18 @@ export function ArticlePreview({
                 </span>
               )}
             </h3>
-            <DetailLevelSelector
-              value={detailLevel}
-              onChange={setDetailLevel}
-              disabled={isLoadingSummary}
-            />
+            <div className="flex items-center gap-2">
+              <LanguageSelector
+                value={language}
+                onChange={setLanguage}
+                disabled={isLoadingSummary}
+              />
+              <DetailLevelSelector
+                value={detailLevel}
+                onChange={setDetailLevel}
+                disabled={isLoadingSummary}
+              />
+            </div>
           </div>
 
           {isLoadingSummary && (
@@ -305,7 +315,13 @@ export function ArticlePreview({
           )}
 
           {!isLoadingSummary && longSummary && (
-            <div className="text-[15px] leading-relaxed text-foreground/90 whitespace-pre-wrap">
+            <div
+              className={cn(
+                "text-[15px] leading-relaxed text-foreground/90 whitespace-pre-wrap",
+                language === 'he' && "text-right"
+              )}
+              dir={language === 'he' ? 'rtl' : 'ltr'}
+            >
               {longSummary}
             </div>
           )}
