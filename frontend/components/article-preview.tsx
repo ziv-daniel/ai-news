@@ -156,7 +156,17 @@ export function ArticlePreview({
           setSummaryError('Failed to generate detailed summary');
         }
       } catch (error) {
-        setSummaryError('Unable to fetch detailed summary');
+        // On CORS error (GitHub Pages), fallback to existing summary if available
+        if (article.long_summary) {
+          setLongSummary(article.long_summary);
+          longSummaryCache.set(cacheKey, article.long_summary);
+          // Only show warning if user tried non-default settings
+          if (detailLevel !== 'medium' || language !== 'en') {
+            setSummaryError('Custom summaries unavailable. Showing default summary.');
+          }
+        } else {
+          setSummaryError('Unable to fetch detailed summary. Read the original article for more details.');
+        }
       } finally {
         setIsLoadingSummary(false);
       }
