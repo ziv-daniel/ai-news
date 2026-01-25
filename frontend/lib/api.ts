@@ -238,10 +238,14 @@ export async function getArticles(params?: {
   }
 
   try {
+    // Calculate 6 hours ago for TTL filter
+    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+
     // Build Supabase query
     let query = supabase
       .from('articles')
-      .select('id, title, link, summary, long_summary, source_name, category, tier, score, published_at, collected_at, read, favorited, archived');
+      .select('id, title, link, summary, long_summary, source_name, category, tier, score, published_at, collected_at, read, favorited, archived')
+      .gte('collected_at', sixHoursAgo); // Only articles from last 6 hours
 
     // Apply filters
     if (params?.tier) {
@@ -364,11 +368,15 @@ export async function searchArticles(
   }
 
   try {
+    // Calculate 6 hours ago for TTL filter
+    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+
     // Use full-text search with the search_vector column
     const { data, error } = await supabase
       .from('articles')
       .select('id, title, link, summary, long_summary, source_name, category, tier, score, published_at, collected_at, read, favorited, archived')
       .textSearch('search_vector', query, { type: 'websearch' })
+      .gte('collected_at', sixHoursAgo) // Only articles from last 6 hours
       .eq('archived', false)
       .order('score', { ascending: false })
       .limit(limit);
