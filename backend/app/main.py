@@ -1,36 +1,36 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import articles, search
+from app.database import init_pool, close_pool
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_pool()
+    yield
+    await close_pool()
 
 app = FastAPI(
     title="AI News RAG API",
-    description="Backend API for AI News RAG system with semantic search",
-    version="3.0.0"
+    description="Backend API for AI News RAG system",
+    version="3.0.0",
+    lifespan=lifespan
 )
 
-# Configure CORS for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003", "http://localhost:3005"],  # Next.js dev server
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers
 app.include_router(articles.router)
 app.include_router(search.router)
 
 @app.get("/")
 async def root():
-    return {
-        "message": "AI News RAG API v3",
-        "docs": "/docs",
-        "endpoints": {
-            "articles": "/articles",
-            "search": "/search"
-        }
-    }
+    return {"message": "AI News RAG API v3", "docs": "/docs"}
 
 @app.get("/health")
 async def health_check():
